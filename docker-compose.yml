@@ -1,0 +1,17 @@
+services:
+
+  postgres:
+    image: postgres:14
+    container_name: postgres_lightning_stats
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lightning_stats
+    volumes:
+      - postgres_data_lightning_stats:/var/lib/postgresql/data
+volumes:
+  postgres_data_lightning_stats:
+    driver: local
