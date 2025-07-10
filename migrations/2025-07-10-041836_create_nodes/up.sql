@@ -1,0 +1,6 @@
+CREATE TABLE nodes (
+  public_key VARCHAR(66) PRIMARY KEY,
+  alias VARCHAR(255) NOT NULL,
+  capacity DECIMAL(18,8) NOT NULL,
+  first_seen TIMESTAMP WITH TIME ZONE NOT NULL
+);
