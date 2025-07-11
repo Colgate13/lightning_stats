@@ -3,7 +3,8 @@ use serde::{Deserialize};
 
 #[derive(Deserialize)]
 pub struct Environments {
-  pub port: u16
+  pub port: u16,
+  pub database_url: String
 }
 
 pub fn get_environments() -> Environments {
