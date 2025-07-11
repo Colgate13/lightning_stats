@@ -1,18 +1,50 @@
-use actix_web::{web, Result};
-use serde::{Serialize};
+use std::{collections::HashMap, time::Instant};
+use actix_web::{web::{self, Data}, Result};
+use diesel::{sql_query, RunQueryDsl};
 
-#[derive(Serialize)]
-pub enum Status {
-  Active
-}
+use crate::infra::{database::PoolHandler, Application, ApplicationStatus, EApplications, StatusResponder};
 
-#[derive(Serialize)]
-pub struct StatusResponder {
-  status: Status
-}
+pub async fn execute(pool_handler: Data<PoolHandler>) -> Result<web::Json<StatusResponder>> {
+  let mut applications: HashMap<EApplications, Application> = HashMap::new();
 
-pub async fn execute() -> Result<web::Json<StatusResponder>> {
+  let start = Instant::now();
+  let postgres_status = web::block(move || -> ApplicationStatus {
+    let current_connection = match pool_handler.pool.get() {
+      Ok(connection) => Ok(connection),
+      Err(_) => Err(false)
+    };
+
+    if current_connection.is_err() {
+      return ApplicationStatus::Inactive;
+    }
+
+    let mut current_connection = current_connection.unwrap();
+
+    let select_result = match sql_query("SELECT 1;").execute(&mut current_connection) {
+      Ok(_) => true,
+      Err(_) => false
+    };
+
+    if !select_result {
+      return ApplicationStatus::Inactive;
+    }
+
+    ApplicationStatus::Active
+  }).await?;
+  let duration = start.elapsed();
+  applications.insert(EApplications::Postgres, Application {
+    status: postgres_status,
+    response_time: duration.as_millis()
+  });
+
+  let status = if applications.values().any(|app| app.status == ApplicationStatus::Inactive) {
+    ApplicationStatus::Inactive
+  } else {
+    ApplicationStatus::Active
+  };
+
   Ok(web::Json(StatusResponder {
-      status: Status::Active
+      status,
+      applications: applications
   }))
 }
