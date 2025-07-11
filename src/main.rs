@@ -7,9 +7,13 @@ mod services;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     infra::environment::settings_logger();
+    infra::database::migrations_up();
 
-    HttpServer::new(|| {
+    let pool_handler= infra::database::PoolHandler::new();
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(pool_handler.clone()))
             .route("/", web::get().to(services::status::execute))
             .route("/status", web::get().to(services::status::execute))
     })
