@@ -14,6 +14,7 @@ impl PoolHandler {
     Self { pool: establish_pool_manager() }
   }
 
+  #[allow(dead_code)]
   pub fn get_connection(&self) -> PgPoolConnection {
     self.pool.get().unwrap()
   }
@@ -32,14 +33,12 @@ pub fn establish_manager() -> ConnectionManager<PgConnection> {
 pub fn establish_pool_manager() -> Pool<ConnectionManager<PgConnection>> {
   let connection_manager = establish_manager();
 
-  let pool = match Pool::builder().build(connection_manager) {
+  match Pool::builder().build(connection_manager) {
     Err(error) => {
-      panic!("Failed to establish pool: {}", error.to_string())
+      panic!("Failed to establish pool: {error}")
     }
     Ok(pool) => pool
-  };
-
-  pool
+  }
 }
 
 pub fn migrations_up() -> bool {
@@ -50,7 +49,7 @@ pub fn migrations_up() -> bool {
     .run_pending_migrations(MIGRATIONS)
     {
       Err(error) => {
-        panic!("Failed to run migrations: {}", error.to_string())
+        panic!("Failed to run migrations: {error}")
       },
       _ => true
     }

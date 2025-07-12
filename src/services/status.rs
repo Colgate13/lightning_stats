@@ -20,11 +20,7 @@ pub async fn execute(pool_handler: Data<PoolHandler>) -> Result<web::Json<Status
 
     let mut current_connection = current_connection.unwrap();
 
-    let select_result = match sql_query("SELECT 1;").execute(&mut current_connection) {
-      Ok(_) => true,
-      Err(_) => false
-    };
-
+    let select_result = sql_query("SELECT 1;").execute(&mut current_connection).is_ok();
     if !select_result {
       return ApplicationStatus::Inactive;
     }
@@ -45,6 +41,6 @@ pub async fn execute(pool_handler: Data<PoolHandler>) -> Result<web::Json<Status
 
   Ok(web::Json(StatusResponder {
       status,
-      applications: applications
+      applications
   }))
 }
