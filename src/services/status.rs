@@ -4,6 +4,9 @@ use diesel::{sql_query, RunQueryDsl};
 
 use crate::infra::{database::PoolHandler, Application, ApplicationStatus, EApplications, StatusResponder};
 
+/**
+ * Executes the status check for the application.
+ */
 pub async fn execute(pool_handler: Data<PoolHandler>) -> Result<web::Json<StatusResponder>> {
   let mut applications: HashMap<EApplications, Application> = HashMap::new();
 

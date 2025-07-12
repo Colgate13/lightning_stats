@@ -7,6 +7,10 @@ pub struct Environments {
   pub database_url: String
 }
 
+/**
+ * Retrieves the environment variables for the application.
+ * Uses dotenv to load environment variables from a .env file.
+ */
 pub fn get_environments() -> Environments {
   dotenv().ok();
 
@@ -14,6 +18,10 @@ pub fn get_environments() -> Environments {
    .expect("Error to load environments")
 }
 
+/**
+ * Initializes the logger for the application.
+ * Sets the log level to info and enables backtrace.
+ */
 pub fn settings_logger() {
   unsafe {
     std::env::set_var("RUST_LOG", "info");
