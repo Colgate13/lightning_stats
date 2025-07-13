@@ -547,10 +547,15 @@ version = "2.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a917a9209950404d5be011c81d081a2692a822f73c3d6af586f0cab5ff50f614"
 dependencies = [
+ "bigdecimal",
  "bitflags",
  "byteorder",
+ "chrono",
  "diesel_derives",
  "itoa",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
  "pq-sys",
  "r2d2",
 ]
@@ -1075,6 +1080,8 @@ dependencies = [
  "dotenv",
  "env_logger",
  "envy",
+ "log",
+ "r2d2",
  "serde",
 ]
 
