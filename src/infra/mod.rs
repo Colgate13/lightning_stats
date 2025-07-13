@@ -26,3 +26,4 @@ pub struct StatusResponder {
 
 pub mod environment;
 pub mod database;
+pub mod schema;

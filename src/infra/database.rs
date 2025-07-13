@@ -1,26 +1,25 @@
 use diesel::{r2d2::{ConnectionManager, Pool, PooledConnection}, Connection, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use r2d2::Error;
+use log::{error as logger_error};
 
 use super::environment::{get_environments};
-pub type PgPoolConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 #[derive(Clone)]
-pub struct PoolHandler {
+pub struct DatabaseHandler {
   pub pool: Pool<ConnectionManager<PgConnection>>
 }
 
 /**
  * Establishes a connection to the database and handler connection.
  */
-impl PoolHandler {
+impl DatabaseHandler {
   pub fn new() -> Self {
-    Self { pool: PoolHandler::establish_pool_manager() }
+    Self { pool: DatabaseHandler::establish_pool_manager() }
   }
 
-  pub fn establish_connection() -> PgConnection {
-    let connection = PgConnection::establish(&get_environments().database_url);
-
-    connection.unwrap_or_else(|_| panic!("Error connection to database"))
+  pub fn establish_connection() -> Result<PgConnection, diesel::ConnectionError> {
+    PgConnection::establish(&get_environments().database_url)
   }
 
   pub fn establish_manager() -> ConnectionManager<PgConnection> {
@@ -28,7 +27,7 @@ impl PoolHandler {
   }
 
   pub fn establish_pool_manager() -> Pool<ConnectionManager<PgConnection>> {
-    let connection_manager = PoolHandler::establish_manager();
+    let connection_manager = DatabaseHandler::establish_manager();
 
     match Pool::builder().build(connection_manager) {
       Err(error) => {
@@ -38,27 +37,37 @@ impl PoolHandler {
     }
   }
 
-  #[allow(dead_code)]
-  pub fn get_connection(&self) -> PgPoolConnection {
-    self.pool.get().unwrap()
+  pub fn get_connection(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Error> {
+    self
+      .pool
+      .get()
+      .map_err(|err| {
+        logger_error!("Error to get database connection: {err}");
+        err
+      })
   }
-}
 
-/**
- * Runs the migrations for the database.
- * Returns true if the migrations were successful.
- * Panics if the migrations fail.
- */
-pub fn migrations_up() -> bool {
-  const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
-  let mut connection = PoolHandler::establish_connection();
+  /**
+   * Runs the migrations for the database.
+   */
+  pub fn migrations_up() -> bool {
+    const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+    let connection = DatabaseHandler::establish_connection();
 
-  match connection
-    .run_pending_migrations(MIGRATIONS)
-    {
-      Err(error) => {
-        panic!("Failed to run migrations: {error}")
-      },
-      _ => true
+    if connection.is_err() {
+      logger_error!("Failed to run migrations. error to get database connection");
+      return false;
     }
+
+    match connection
+      .unwrap()
+      .run_pending_migrations(MIGRATIONS)
+      {
+        Err(error) => {
+          logger_error!("Failed to run migrations: {error}");
+          false
+        },
+        _ => true
+      }
+  }
 }
