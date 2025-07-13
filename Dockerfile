@@ -16,7 +16,9 @@ RUN cargo build --release
 FROM bitnami/minideb:bookworm
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y libpq5 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libpq5 ca-certificates curl && \
+  update-ca-certificates && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /code/target/release/lightning_stats lightning_stats
 COPY --from=builder /code/.env /app/.env
