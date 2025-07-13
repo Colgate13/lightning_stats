@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 
-#[derive(Queryable, Serialize, Deserialize)]
+use crate::infra::schema::nodes;
+
+#[derive(Queryable, Serialize, Deserialize, Selectable, Debug)]
+#[diesel(table_name = nodes)]
 pub struct Node {
   pub public_key: String,
   pub alias: String,
