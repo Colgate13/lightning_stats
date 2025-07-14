@@ -54,4 +54,4 @@ jobs:
           script: |
             sudo chown -R $USER /var/www/lightning_stats.velloware.com/
             cd /var/www/lightning_stats.velloware.com/
-            docker compose up -d --build
+            docker compose up -d
