@@ -8,16 +8,19 @@ use tokio::time::interval;
 use crate::{infra::database::DatabaseHandler, models::node::{Node, ResponseNodes}};
 use crate::infra::schema::nodes::dsl::{nodes};
 
+/**
+ * Fetches nodes from the database and returns them as a JSON response.
+ */
 pub async fn get_nodes(pool_handler: Data<DatabaseHandler>) -> Result<web::Json<Vec<Node>>> {
-    let result = web::block(move || -> Result<Vec<Node>, Error> {
-        let mut database_connection = pool_handler.get_connection()?;
+  let result = web::block(move || -> Result<Vec<Node>, Error> {
+    let mut database_connection = pool_handler.get_connection()?;
 
-        Ok(nodes.load::<Node>(&mut database_connection).unwrap_or_else(|error| {
-          logger_error!("Error in node execute: {error}");
-          vec![]
-        }))
-    })
-    .await?;
+    Ok(nodes.load::<Node>(&mut database_connection).unwrap_or_else(|error| {
+      logger_error!("Error in node execute: {error}");
+      vec![]
+    }))
+  })
+  .await?;
 
   match result {
     Ok(data) => Ok(web::Json(data)),
@@ -25,10 +28,14 @@ pub async fn get_nodes(pool_handler: Data<DatabaseHandler>) -> Result<web::Json<
   }
 }
 
+/**
+ * Synchronizes nodes with the external API and updates the database.
+ */
 pub async fn sync_nodes(pool_handler: &DatabaseHandler) -> Result<(), Box<dyn std::error::Error>> {
   let mut database_connection = pool_handler.get_connection()?;
   let client = reqwest::Client::new();
 
+  // Fetch nodes from the external API
   let response = client
     .get("https://mempool.space/api/v1/lightning/nodes/rankings/connectivity")
     .timeout(Duration::from_secs(30))
@@ -37,6 +44,7 @@ pub async fn sync_nodes(pool_handler: &DatabaseHandler) -> Result<(), Box<dyn st
     .error_for_status()?;
   let nodes_data = response.json::<Vec<ResponseNodes>>().await?;
 
+  // Start a transaction with the database to ensure atomicity
   database_connection.transaction(|connection| -> Result<(), Box<dyn std::error::Error>> {
     diesel::delete(nodes).execute(connection)?;
 
@@ -53,6 +61,9 @@ pub async fn sync_nodes(pool_handler: &DatabaseHandler) -> Result<(), Box<dyn st
   })
 }
 
+/**
+ * Periodically synchronizes nodes with the external API.
+ */
 pub async fn sync_nodes_routine(pool_handler: DatabaseHandler) {
   let mut interval = interval(Duration::from_secs(30));
 

@@ -6,13 +6,13 @@ mod services;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    infra::environment::settings_logger();
-    infra::database::DatabaseHandler::migrations_up();
+    infra::environment::settings_logger(); // Initialize logger settings
+    infra::database::DatabaseHandler::migrations_up(); // Run database migrations
 
-    let pool_handler= infra::database::DatabaseHandler::new();
-    let sync_pool_handler = pool_handler.clone();
+    let pool_handler= infra::database::DatabaseHandler::new(); // Create a new database connection pool handler
+    let sync_pool_handler = pool_handler.clone(); // Clone the pool handler for the sync task
 
-    tokio::spawn(async move {
+    tokio::spawn(async move { // Spawn a background task to periodically sync nodes
         services::node::sync_nodes_routine(sync_pool_handler.clone()).await;
     });
 

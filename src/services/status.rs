@@ -8,6 +8,7 @@ use crate::infra::{database::DatabaseHandler, Application, ApplicationStatus, EA
  * Executes the status check for the application.
  */
 pub async fn execute(pool_handler: Data<DatabaseHandler>) -> Result<web::Json<StatusResponder>> {
+  // Initialize a HashMap to store the status of each application
   let mut applications: HashMap<EApplications, Application> = HashMap::new();
 
   let start = Instant::now();
@@ -31,11 +32,14 @@ pub async fn execute(pool_handler: Data<DatabaseHandler>) -> Result<web::Json<St
     ApplicationStatus::Active
   }).await?;
   let duration = start.elapsed();
+
+  // Insert the PostgreSQL status into the applications HashMap
   applications.insert(EApplications::Postgres, Application {
     status: postgres_status,
     response_time: duration.as_millis()
   });
 
+  // If any application is inactive, set the overall status to Inactive
   let status = if applications.values().any(|app| app.status == ApplicationStatus::Inactive) {
     ApplicationStatus::Inactive
   } else {
@@ -43,7 +47,7 @@ pub async fn execute(pool_handler: Data<DatabaseHandler>) -> Result<web::Json<St
   };
 
   Ok(web::Json(StatusResponder {
-      status,
-      applications
+    status,
+    applications
   }))
 }

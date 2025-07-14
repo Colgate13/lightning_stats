@@ -25,18 +25,23 @@ pub struct ResponseNodes {
 }
 
 impl Node {
+  // Converts satoshis to bitcoin (1 BTC = 100,000,000 satoshis)
   fn satoshis_to_bitcoin(satoshis: i64) -> BigDecimal {
     let sats = BigDecimal::from(satoshis);
     let bitcoin_factor = BigDecimal::from(100_000_000);
     sats / bitcoin_factor
   }
 
+  // Converts a timestamp to a DateTime<Utc>
   fn timestamp_to_datetime(timestamp: i64) -> DateTime<Utc> {
     DateTime::from_timestamp(timestamp, 0)
       .unwrap_or_else(Utc::now)
   }
 }
 
+/**
+ * Converts a ResponseNodes to a Node.
+ */
 impl From<ResponseNodes> for Node {
   fn from(value: ResponseNodes) -> Self {
     Node {
